@@ -1,0 +1,79 @@
+// This tells Prisma which database to use
+// and where to find the connection string
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MODEL
+// This becomes the "users" table in your DB
+// ============================================
+
+// This is an ENUM — it means the role can ONLY be "USER" or "ADMIN"
+// Nothing else is allowed — TypeScript + DB both enforce this
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id             String    @id @default(cuid())   // unique ID for each user
+  name           String?                           // ? means optional (can be null)
+  email          String    @unique                 // must be unique, no duplicates
+  emailVerified  DateTime?                         // when their email was verified
+  password       String?                           // hashed password (null for Google users)
+  role           Role      @default(USER)          // everyone starts as USER
+  image          String?                           // profile picture URL
+  createdAt      DateTime  @default(now())         // when they signed up
+
+  // These two lines connect User to Auth.js tables below
+  accounts       Account[]
+  sessions       Session[]
+}
+
+// ============================================
+// AUTH.JS REQUIRED TABLES
+// These are needed by Auth.js to work properly
+// You don't touch these directly — Auth.js manages them
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String                        // e.g. "google", "credentials"
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
