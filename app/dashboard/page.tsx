@@ -1,9 +1,15 @@
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-// This is a SERVER component — it runs on the server
-// We can directly call auth() to get the session
 export default async function DashboardPage() {
   const session = await auth();
+
+  // Second layer of protection
+  // Middleware already blocks unauthenticated users
+  // but this is a backup — and also gives us the session data we need
+  if (!session) {
+    redirect("/login");
+  }
 
   return (
     <div>
@@ -15,16 +21,44 @@ export default async function DashboardPage() {
       {/* Real session data */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <h2 className="font-semibold text-blue-800 mb-3">Your Session Info</h2>
-        <div className="space-y-1 text-sm text-blue-700">
-          <p>Name: {session?.user?.name ?? "—"}</p>
-          <p>Email: {session?.user?.email ?? "—"}</p>
+        <div className="space-y-2 text-sm text-blue-700">
           <p>
-            Role:{" "}
-            <span className="font-semibold">{session?.user?.role ?? "—"}</span>
+            <span className="font-medium">Name:</span>{" "}
+            {session.user?.name ?? "—"}
           </p>
-          <p>ID: {session?.user?.id ?? "—"}</p>
+          <p>
+            <span className="font-medium">Email:</span>{" "}
+            {session.user?.email ?? "—"}
+          </p>
+          <p>
+            <span className="font-medium">Role:</span>{" "}
+            <span
+              className={`font-semibold px-2 py-0.5 rounded text-xs ${
+                session.user?.role === "ADMIN"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              {session.user?.role}
+            </span>
+          </p>
+          <p>
+            <span className="font-medium">ID:</span> {session.user?.id ?? "—"}
+          </p>
         </div>
       </div>
+
+      {/* Show different content based on role */}
+      {session.user?.role === "ADMIN" ? (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <p className="text-sm text-yellow-800">
+            👑 You are an admin.{" "}
+            <a href="/admin" className="underline font-medium">
+              Go to Admin Panel →
+            </a>
+          </p>
+        </div>
+      ) : null}
 
       <div className="border rounded-lg p-5">
         <h2 className="font-semibold mb-3">What you can do:</h2>
