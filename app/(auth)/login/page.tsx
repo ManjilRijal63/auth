@@ -1,36 +1,106 @@
+"use client"; // This runs in the browser, not the server
+
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+  const router = useRouter();
+
+  // State for the form fields
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // State for feedback
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // This runs when the email/password form is submitted
+  async function handleCredentialsLogin(e: React.FormEvent) {
+    e.preventDefault(); // stop the browser from refreshing the page
+    setError("");
+    setLoading(true);
+
+    // signIn() is from next-auth/react
+    // "credentials" matches the provider name in auth.ts
+    // redirect: false means we handle the redirect ourselves
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      // Auth.js returns "CredentialsSignin" on wrong email/password
+      setError("Invalid email or password");
+      return;
+    }
+
+    // Login worked — go to dashboard
+    router.push("/dashboard");
+    router.refresh(); // refresh so the navbar updates with session info
+  }
+
+  // This runs when Google button is clicked
+  async function handleGoogleLogin() {
+    // signIn("google") redirects to Google's login page automatically
+    // After Google login, it redirects back to /dashboard
+    await signIn("google", { callbackUrl: "/dashboard" });
+  }
+
   return (
     <div className="max-w-md mx-auto">
       <h1 className="text-3xl font-bold mb-1">Sign In</h1>
       <p className="text-gray-500 mb-8">Welcome back</p>
 
-      {/* Email/Password form — will be wired up in Phase 4 */}
+      {/* Show error if login failed */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+          {error}
+        </div>
+      )}
+
+      {/* Email/Password Form */}
       <div className="border rounded-lg p-6 mb-4">
         <h2 className="font-semibold mb-4 text-sm text-gray-700">
           Login with Email & Password
         </h2>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <input
-            type="email"
-            placeholder="you@example.com"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <form onSubmit={handleCredentialsLogin}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <div className="mb-5">
-          <label className="block text-sm font-medium mb-1">Password</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div className="mb-5">
+            <label className="block text-sm font-medium mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <button className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
-          Sign In
-        </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
       </div>
 
       {/* Divider */}
@@ -40,8 +110,11 @@ export default function LoginPage() {
         <div className="flex-1 border-t" />
       </div>
 
-      {/* Google button — will be wired up in Phase 4 */}
-      <button className="w-full border rounded-lg py-2 px-4 flex items-center justify-center gap-2 text-sm hover:bg-gray-50 transition-colors">
+      {/* Google Button */}
+      <button
+        onClick={handleGoogleLogin}
+        className="w-full border rounded-lg py-2 px-4 flex items-center justify-center gap-2 text-sm hover:bg-gray-50 transition-colors"
+      >
         <svg className="w-4 h-4" viewBox="0 0 24 24">
           <path
             fill="#4285F4"

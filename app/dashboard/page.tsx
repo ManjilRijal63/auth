@@ -1,30 +1,37 @@
-export default function DashboardPage() {
+import { auth } from "@/lib/auth";
+
+// This is a SERVER component — it runs on the server
+// We can directly call auth() to get the session
+export default async function DashboardPage() {
+  const session = await auth();
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
       <p className="text-gray-500 mb-8">
-        This page is protected. Only logged-in users can see it.
+        You are logged in. This is your personal dashboard.
       </p>
 
-      {/* User info card — we'll fill this with real data in Phase 4 */}
+      {/* Real session data */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <h2 className="font-semibold text-blue-800 mb-3">Your Session Info</h2>
         <div className="space-y-1 text-sm text-blue-700">
-          <p>Name: —</p>
-          <p>Email: —</p>
-          <p>Role: —</p>
+          <p>Name: {session?.user?.name ?? "—"}</p>
+          <p>Email: {session?.user?.email ?? "—"}</p>
+          <p>
+            Role:{" "}
+            <span className="font-semibold">{session?.user?.role ?? "—"}</span>
+          </p>
+          <p>ID: {session?.user?.id ?? "—"}</p>
         </div>
-        <p className="text-xs text-blue-400 mt-3">
-          (Real data will show here after we add auth in Phase 4)
-        </p>
       </div>
 
       <div className="border rounded-lg p-5">
-        <h2 className="font-semibold mb-3">What logged-in users can do:</h2>
+        <h2 className="font-semibold mb-3">What you can do:</h2>
         <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
-          <li>View their own profile</li>
+          <li>View your profile</li>
           <li>Access protected content</li>
-          <li>Perform regular user actions</li>
+          <li>Regular user actions</li>
         </ul>
       </div>
     </div>
